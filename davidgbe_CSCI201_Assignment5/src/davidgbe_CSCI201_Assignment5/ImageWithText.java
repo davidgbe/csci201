@@ -13,6 +13,7 @@ public class ImageWithText extends JLabel {
 		super(new ImageIcon(imagePath));
 		this.text = text;
 		this.offset = offset;
+		this.setOpaque(false);
 		this.repaint();
 	}
 	

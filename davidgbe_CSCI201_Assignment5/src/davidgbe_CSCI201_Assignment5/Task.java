@@ -10,41 +10,56 @@ import java.util.Stack;
 import java.util.TreeMap;
 
 public class Task {
-	private HashMap<String, Integer> materials;
+	private ArrayList<Material> materials;
 	private ArrayList<Instruction> instructions;
+	private int materialsIndex = 0;
 	private int instructionsIndex = 0;
 	private String taskName;
 	private int id;
 	private static int classId = 0;
+	public boolean assigned = false;
 	
 	public Task(String taskName) {
-		this.materials = new HashMap<String, Integer>();
+		this.materials = new ArrayList<Material>();
 		this.instructions = new ArrayList<Instruction>();
 		this.id = classId;
 		classId++;
 		this.taskName = taskName;
 	}
 	
-	public HashMap<String, Integer> getMaterials() {
+	public ArrayList<Material> getMaterials() {
 		return this.materials;
 	}
 	
-	public Instruction getNextInstruction() {
-		if(hasNextInstruction()) {
-			return instructions.get(instructionsIndex);
+	public String getNextMaterial() {
+		String toReturn = this.materials.get(materialsIndex).name;
+		materialsIndex++;
+		return toReturn;
+	}
+	
+	public boolean hasNextMaterial() {
+		if(materialsIndex < materials.size()) {
+			System.out.println(materialsIndex + "" + materials.size());
+			return true;
 		}
-		return null;
+		return false;
+	}
+	
+	public Instruction getNextInstruction() {
+		Instruction instruction = instructions.get(instructionsIndex);
+		instructionsIndex++;
+		return instruction;
 	}
 	
 	public boolean hasNextInstruction() {
 		if(instructionsIndex < instructions.size()) {
 			return true;
 		}
-		return true;
+		return false;
 	}
 	
 	public void addMaterial(String materialName, int quantity) {
-		this.materials.put(materialName, quantity);
+		this.materials.add(new Material(materialName, quantity));
 	}
 	
 	public void addInstuction(int time, TreeMap<String, Integer> tools, String location) {
@@ -88,7 +103,7 @@ public class Task {
 		System.out.println(resourceName);
 		int q = Integer.parseInt(quantity);
 		for(int i = 0; i < tasks.size(); i++) {
-			tasks.get(i).getMaterials().put(resourceName, new Integer(q));
+			tasks.get(i).getMaterials().add(new Material(resourceName, new Integer(q)));
 		}
 	}
 	

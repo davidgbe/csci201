@@ -3,6 +3,7 @@ package davidgbe_CSCI201_Assignment5;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -35,13 +36,17 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class Factory extends JFrame {
 	
 	private JPanel mainPanel;
-	private JPanel factoryPanel;
+	private FactoryPanel factoryPanel;
 	private JTable table;
 	private JPanel resourcesPanel;
 	private JPanel toolsPanel;
 	private JPanel workAreasPanel;
+	private ReentrantLock lock = new ReentrantLock();
 	
 	private TreeMap<String, Integer> tools;
+	private TreeMap<String, Item> allItems = new TreeMap<String, Item>();
+	private ArrayList<Worker> allWorks = new ArrayList<Worker>();
+	private ArrayList<Task> allTasks = new ArrayList<Task>();
 	
 	public Factory() {
 		super("Factory");
@@ -63,11 +68,14 @@ public class Factory extends JFrame {
 		this.setUpFactoryPanel();
 		this.setUpTaskBoard();
 		addResources();
-//		addTools();
 		addWorkAreas();
 		this.add(mainPanel);
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setVisible(true);
+	}
+	
+	public TreeMap<String, Item> getAllItems() {
+		return this.allItems;
 	}
 	
 	private void selectFile() {
@@ -90,7 +98,10 @@ public class Factory extends JFrame {
 			        System.out.println(filePath);
 			        String fileName = filePath.toString();
 			        if(fileName.substring(fileName.length() - 3, fileName.length()).equals("rcp")) {
-			        	Task.fromFile(filePath.toString());
+			        	ArrayList<Task> temp = Task.fromFile(filePath.toString());
+			        	for(Task t : temp) {
+			        		this.allTasks.add(t);
+			        	}
 			        } else{
 			        	parseTools(filePath.toString());
 			        	this.repaint();
@@ -102,13 +113,21 @@ public class Factory extends JFrame {
 		}
 	}
 	
+	public ArrayList<Task> getAllTasks() {
+		return this.allTasks;
+	}
+	
 	private void setUpFactoryPanel() {
-		factoryPanel = new JPanel();
+		factoryPanel = new FactoryPanel();
+		this.factoryPanel.setWorkers(this.allWorks);
 		factoryPanel.setPreferredSize(new Dimension(600, 600));
 		factoryPanel.setLayout(new BorderLayout());
 		resourcesPanel = new JPanel();
+		resourcesPanel.setOpaque(false);
 		toolsPanel = new JPanel();
+		toolsPanel.setOpaque(false);
 		workAreasPanel = new JPanel();
+		workAreasPanel.setOpaque(false);
 		workAreasPanel.setLayout(new GridBagLayout());
 		toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
 		factoryPanel.add(resourcesPanel, BorderLayout.NORTH);
@@ -135,6 +154,9 @@ public class Factory extends JFrame {
 		resourcesPanel.add(wood);
 		resourcesPanel.add(metal);
 		resourcesPanel.add(plastic);
+		this.allItems.put("Wood", wood);
+		this.allItems.put("Metal", metal);
+		this.allItems.put("Plastic", plastic);
 		this.repaint();
 		
 	}
@@ -145,6 +167,7 @@ public class Factory extends JFrame {
 			String stripped = key.toLowerCase().replaceAll("\\s","");
 			System.out.println("Stripped :" + stripped);
 			Tool tool = new Tool(key, "resources/" + stripped + ".png", map.get(key));
+			this.allItems.put(key, tool);
 			this.toolsPanel.add(tool);
 		}
 		System.out.println("Here");
@@ -161,12 +184,14 @@ public class Factory extends JFrame {
 			gbc.gridx = i+1;
 			WorkArea anvil = new WorkArea("resources/anvil.png", title);
 			workAreasPanel.add(anvil, gbc);
+			this.allItems.put("Anvil", anvil);
 			new Thread(anvil).start();
 		}
 		for(int i = 0; i < 3; i++) {
 			gbc.gridx = i+3;
 			WorkArea workBench = new WorkArea("resources/workbench.png", title);
 			workAreasPanel.add(workBench, gbc);
+			this.allItems.put("Workbench", workBench);
 			new Thread(workBench).start();
 		}
 		
@@ -191,12 +216,14 @@ public class Factory extends JFrame {
 			gbc.gridx = i+1;
 			WorkArea furnace = new WorkArea("resources/furnace.png", title);
 			workAreasPanel.add(furnace, gbc);
+			this.allItems.put("Furnace", furnace);
 			new Thread(furnace).start();
 		}
 		for(int i = 0; i < 3; i++) {
 			gbc.gridx = i+3;
 			WorkArea tableSaw = new WorkArea("resources/tablesaw.png", title);
 			workAreasPanel.add(tableSaw, gbc);
+			this.allItems.put("tableSaw", tableSaw);
 			new Thread(tableSaw).start();
 		}
 		
@@ -221,12 +248,14 @@ public class Factory extends JFrame {
 			gbc.gridx = i+1;
 			WorkArea paintingStation = new WorkArea("resources/paintingstation.png", title);
 			workAreasPanel.add(paintingStation, gbc);
+			this.allItems.put("Painting Station", paintingStation);
 			new Thread(paintingStation).start();
 		}
 		for(int i = 0; i < 1; i++) {
 			gbc.gridx = i+5;
 			WorkArea press = new WorkArea("resources/press.png", title);
 			workAreasPanel.add(press, gbc);
+			this.allItems.put("Press", press);
 			new Thread(press).start();
 		}
 		
@@ -288,11 +317,17 @@ public class Factory extends JFrame {
 						}
 					}
 				}
-				System.out.println(quantity);
-				System.out.println(toolName);
+				System.out.println("Quantity:" + quantity);
+				System.out.println("Name :" + toolName);
 				int q = Integer.parseInt(quantity);
 				if(!toolName.equals("Workers")) {
 					tools.put(toolName, new Integer(q));
+				} else {
+					for(int j = 0; j < q; j++) {
+						Worker worker = new Worker("worker.png", this);
+						worker.start();
+						this.allWorks.add(worker);
+					}
 				}
 			}
 			catch(IOException e) {
@@ -302,9 +337,27 @@ public class Factory extends JFrame {
 		}
 		addTools(tools);
 	}
+	
+	public synchronized Task getFreshTask() {
+		for(Task t : this.getAllTasks()) {
+			System.out.println("ID: " + t.getId());
+			if(!t.assigned) {
+				t.assigned = true;
+				return t;
+			}
+		}
+		return null;
+	}
+	
+	public void update() {
+		while(true) {
+			this.factoryPanel.repaint();
+		}
+	}
 
 	public static void main(String[] args) {
 		Factory fact = new Factory();
+		fact.update();
 	}
 
 }

@@ -19,8 +19,15 @@ public class Tool extends Item {
 	public void takeTool() {
 		lock.lock();
 		try {
-			currentQuantity--;
-			this.updateText(currentQuantity + "/" + maxQuantity);
+			try {
+				toolSemaphore.acquire();
+				currentQuantity--;
+				this.updateText(currentQuantity + "/" + maxQuantity);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		} finally {
 			lock.unlock();
 		}
@@ -31,6 +38,7 @@ public class Tool extends Item {
 		try {
 			currentQuantity++;
 			this.updateText(currentQuantity + "/" + maxQuantity);
+			toolSemaphore.release();
 		} finally {
 			lock.unlock();
 		}
