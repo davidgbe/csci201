@@ -10,6 +10,8 @@ public class Instruction {
 	private SortedMap<String, Integer> tools;
 	private String location;
 	int index = 0;
+	boolean needsReturn = false;
+	boolean complete = false;
 	
 	public Instruction(int time, SortedMap<String, Integer> tools, String location) {
 		this.time = time;
@@ -22,7 +24,14 @@ public class Instruction {
 	}
 	
 	public String location() {
+		System.out.println("LOCATION CALLED");
+		needsReturn = true;
+		index = 0;
 		return this.location;
+	}
+	
+	public boolean needToReturnTools() {
+		return this.needsReturn;
 	}
 	
 	public String nextTool() {
@@ -41,6 +50,8 @@ public class Instruction {
 	public boolean needsTool() {
 		if(index < tools.size()) {
 			return true;
+		} else if(needsReturn) {
+			complete = true;
 		}
 		return false;
 	}

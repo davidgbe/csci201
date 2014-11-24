@@ -340,7 +340,6 @@ public class Factory extends JFrame {
 	
 	public synchronized Task getFreshTask() {
 		for(Task t : this.getAllTasks()) {
-			System.out.println("ID: " + t.getId());
 			if(!t.assigned) {
 				t.assigned = true;
 				return t;

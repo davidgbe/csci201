@@ -16,6 +16,7 @@ import org.omg.CORBA.portable.InputStream;
 
 public class Worker extends Thread {
 	private Task currentTask;
+	private Instruction currentIns;
 	private Image img;
 	private String target = "Task Board";
 	private Factory factory;
@@ -25,6 +26,9 @@ public class Worker extends Thread {
 	public static final int yOffset = 65;
 	private int quantityToTake;
 	private int time;
+	public final int speed = 2;
+	public final int margin = 2;
+	private boolean canProceed = true;
 	
 	public Worker(String imagePath, Factory f) {
 		Toolkit tk = Toolkit.getDefaultToolkit();
@@ -71,38 +75,59 @@ public class Worker extends Thread {
 				currentTask = this.factory.getFreshTask();
 			}
 		} else if(factory.getAllItems().get(target) instanceof Resource){
-			((Resource)factory.getAllItems().get(target)).takeResource(quantityToTake);
+			canProceed = ((Resource)factory.getAllItems().get(target)).takeResource(quantityToTake);
+			System.out.println("QUANTITY:" + quantityToTake);
 		} else if(factory.getAllItems().get(target) instanceof Tool){
-			((Tool)factory.getAllItems().get(target)).takeTool();
+			if(!currentIns.needToReturnTools()) {
+				((Tool)factory.getAllItems().get(target)).takeTool();
+			} else {
+				((Tool)factory.getAllItems().get(target)).returnTool();
+			}
 		} else if(factory.getAllItems().get(target) instanceof WorkArea){
-			((WorkArea)factory.getAllItems().get(target)).startCountDown(time);
+			WorkArea wa = ((WorkArea)factory.getAllItems().get(target));
+			wa.startCountDown(time);
 		}
 	}
 	
 	public void getNextTarget() {
 		if(currentTask.hasNextMaterial()) {
 			target = currentTask.getNextMaterial();
+			System.out.println("MATERIAL: " + target);
 			for(int i = 0; i < currentTask.getMaterials().size(); i++) {
 				if(currentTask.getMaterials().get(i).name.equals(target)) {
 					quantityToTake = currentTask.getMaterials().get(i).quantity;
 				}
 			}
-		} else if(currentTask.hasNextInstruction()) {
-			Instruction targetIns = currentTask.getNextInstruction();
-			int time = targetIns.getTime();
-			if(targetIns.needsTool()) {
-				target = targetIns.nextTool();
+		} else if(currentTask.hasNextInstruction() || (currentIns != null && !currentIns.complete) ) {
+			if(currentIns == null || currentIns.complete) {
+				this.currentIns = currentTask.getNextInstruction();
+				time = this.currentIns.getTime();
+			}
+			if(this.currentIns.needsTool()) {
+				target = this.currentIns.nextTool();
 				if(target.equals("Paintbrush")) {
 					target += "es";
+				} else if(target.equals("Pliers") || target.equals("Screwdrivers")) {
+					
 				} else {
 					target += "s";
 				}
+				System.out.println("TOOL: " + target);
+			} else if(!currentIns.needToReturnTools()){
+				target = this.currentIns.location();
+				if(target.equals("Saw")) {
+					target = "tableSaw";
+				} else if(target.equals("Paintingstation")) {
+					target = "Painting Station";
+				}
+				System.out.println("LOCATION: " + target);
 			} else {
-				target = targetIns.location();
+				target = "Home";
 			}
 		} else {
 			target = "Task Board";
 		}
+		System.out.println("TARGET:" + target);
 	}
 	
 	public void moveToward(String t) {
@@ -111,57 +136,59 @@ public class Worker extends Thread {
 		if(t.equals("Task Board")) {
 			targetX = 550;
 			targetY = 25;
+		} else if(t.equals("Home")) {
+			targetX = 70;
+			targetY = 90;
 		} else {
 			Item tt = this.factory.getAllItems().get(t);
 			
 			targetX = tt.getX();
 			targetY = tt.getY();
 		}
-		if(getX() < 100) {
-			if(targetY > getY() - yOffset) {
-				setY(getY() + 1);
-			} else if (targetY < getY() - yOffset) {
-				setY(getY() - 1);
-			} else {
+		
+		if(targetY - margin <= getY() - yOffset && targetY + margin >= getY() - yOffset && targetX - margin <= getX() + xOffset && targetX + margin >= getX() + xOffset) {
+			if(canProceed) {
+				interact();
+			}
+			if(currentTask != null && canProceed) {
+				getNextTarget();
+			}
+		} else if(getX() < 100) {
+			if(targetY - margin <= getY() - yOffset && targetY + margin >= getY() - yOffset) {
 				if(targetX > getX() + xOffset) {
-					setX(getX() + 1);
-				} else if(targetX < getX() + xOffset) {
-					setX(getX() - 1);
+					setX(getX() + this.speed);
 				} else {
-					interact();
-					if(currentTask != null) {
-						getNextTarget();
-					}
+					setX(getX() - this.speed);
 				}
 			}
-		} else {
-			if(targetX > getX() + xOffset) {
-				setX(getX() + 1);
-			} else if(targetX < getX() + xOffset) {
-				setX(getX() - 1);
+			else if(targetY > getY() - yOffset) {
+				setY(getY() + this.speed);
 			} else {
+				setY(getY() - this.speed);
+			} 
+		} else {
+			if(targetX - margin <= getX() + xOffset && targetX + margin >= getX() + xOffset) {
 				if(targetY > getY() - yOffset) {
-					setY(getY() + 1);
-				} else if(targetY < getY() - yOffset) {
-					setY(getY() - 1);
+					setY(getY() + this.speed);
 				} else {
-					interact();
-					if(currentTask != null) {
-						getNextTarget();
-					}
+					setY(getY() - this.speed);
 				}
+			}
+			else if(targetX > getX() + xOffset) {
+				setX(getX() + this.speed);
+			} else {
+				setX(getX() - this.speed);
 			}
 		}
 	}
 	
 	public void run() {
 		while(true) {
-			if(target != null && (target.equals("Task Board") || this.factory.getAllItems().containsKey(target))) {
+			if(target != null && (target.equals("Task Board") || target.equals("Home") || this.factory.getAllItems().containsKey(target))) {
 				moveToward(target);
 				try {
-					Thread.sleep(10);
+					Thread.sleep(16);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}

@@ -1,6 +1,7 @@
 package davidgbe_CSCI201_Assignment5;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Tool extends Item {
@@ -17,17 +18,16 @@ public class Tool extends Item {
 	}
 	
 	public void takeTool() {
-		lock.lock();
 		try {
-			try {
-				toolSemaphore.acquire();
-				currentQuantity--;
-				this.updateText(currentQuantity + "/" + maxQuantity);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
+			toolSemaphore.acquire();
+			System.out.println("Got past semaphore");
+			lock.lock();
+			System.out.println("Got past lock");
+			currentQuantity--;
+			this.updateText(currentQuantity + "/" + maxQuantity);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} finally {
 			lock.unlock();
 		}
@@ -42,10 +42,6 @@ public class Tool extends Item {
 		} finally {
 			lock.unlock();
 		}
-	}
-	
-	public Semaphore getToolSemaphore() {
-		return this.toolSemaphore;
 	}
 	
 	

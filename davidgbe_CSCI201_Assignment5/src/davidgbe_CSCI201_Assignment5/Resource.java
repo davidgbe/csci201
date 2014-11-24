@@ -1,5 +1,6 @@
 package davidgbe_CSCI201_Assignment5;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Resource extends Item {
@@ -20,11 +21,12 @@ public class Resource extends Item {
 				lock.unlock();
 				return true;
 			} else {
+				lock.unlock();
 				return false;
 			}
 		} catch(Exception e) {
-			e.printStackTrace();
 			lock.unlock();
+			e.printStackTrace();
 			return false;
 		}
 	}
