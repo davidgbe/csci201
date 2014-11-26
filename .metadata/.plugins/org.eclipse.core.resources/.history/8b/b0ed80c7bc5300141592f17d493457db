@@ -1,0 +1,24 @@
+
+public class MultiThreadMain {
+	
+	public static void main(String []  args) {
+		System.out.println("First Line");
+		TestThread tt = new TestThread(1);
+		tt.start();
+		System.out.println("Last line");
+		
+	}
+}
+
+class TestThread extends Thread {
+	private int num;
+	
+	public TestThread(int num) {
+		this.num = num;
+	}
+	
+	public void run() {
+		System.out.println(num + "Hello");
+		System.out.println(num + "World");
+	}
+}

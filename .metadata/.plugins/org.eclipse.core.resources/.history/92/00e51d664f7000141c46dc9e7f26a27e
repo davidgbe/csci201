@@ -1,0 +1,27 @@
+import java.util.concurrent.Semaphore;
+
+
+public class Connection implements Runnable {
+	private NumberServer server;
+	private Semaphore semaphore;
+
+	public Connection(NumberServer ns, Semaphore s) {
+		this.server = ns;
+		this.semaphore = s;
+	}
+	
+	public void run() {
+		while(true) {
+			try {
+				this.semaphore.acquire();
+				System.out.println(this.server.getNumber());
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				semaphore.release();
+			}
+		}
+	}
+
+}

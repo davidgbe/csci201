@@ -1,0 +1,15 @@
+
+public class Connection implements Runnable {
+	private NumberServer server;
+
+	public Connection(NumberServer ns) {
+		this.server = ns;
+	}
+	
+	public void run() {
+		while(true) {
+			System.out.println(this.server.getNumber());
+		}
+	}
+
+}

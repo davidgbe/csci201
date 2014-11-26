@@ -1,0 +1,9 @@
+
+public class PurchaseUpdate extends MoneyUpdate {
+	private boolean successful;
+	private int steroids;
+	private int morphine;
+	private int epinephrine;
+	
+	public PurchaseUpdate(int )
+}

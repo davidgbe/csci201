@@ -1,0 +1,45 @@
+import java.awt.List;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
+
+
+public class Driver {
+	private NumberServer server;
+	ArrayList<Connection> connections = new ArrayList<Connection>();
+	private final ExecutorService pool;
+	private Semaphore poolSemaphore;
+	private Semaphore lock = new Semaphore(1);
+	private List results = (List) Collections.synchronizedList(new ArrayList<Integer>());
+	
+	public Driver(int n) {
+		server = new NumberServer();
+		poolSemaphore = new Semaphore(5);
+		pool = Executors.newFixedThreadPool(n);
+		for (int i = 0; i < n; i++) {
+			pool.execute(new Thread(new Connection(server, poolSemaphore, results, lock)));
+		}
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		pool.shutdown();
+		printResults();
+	}
+	
+	public void printResults() {
+		for(int i = 0; i < results.countItems(); i++) {
+			System.out.println(results.getItem(i));
+		}
+	}
+	
+	public static void main(String[] args) {
+		Driver driver = new Driver(10);
+	}
+}

@@ -1,0 +1,23 @@
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+public class Driver {
+	private NumberServer server;
+	ArrayList<Connection> connections = new ArrayList<Connection>();
+	private final ExecutorService pool;
+	
+	public Driver(int n) {
+		server = new NumberServer();
+		pool = Executors.newFixedThreadPool(n);
+		for (;;) {
+			pool.execute(new Thread(new Connection(server)));
+		}
+	}
+	
+	public static void main(String[] args) {
+		new Driver(10);
+	}
+}

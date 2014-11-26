@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -22,13 +23,15 @@ public class Worker extends Thread {
 	private Factory factory;
 	private int x = 70;
 	private int y = 90;
-	public static final int xOffset = -20;
-	public static final int yOffset = 65;
+	public static final int xOffset = 0;
+	public static final int yOffset = 0;
 	private int quantityToTake;
 	private int time;
 	public final int speed = 2;
 	public final int margin = 2;
 	private boolean canProceed = true;
+	
+	private TreeMap<String, Integer> tools = new TreeMap<String, Integer>();
 	
 	public Worker(String imagePath, Factory f) {
 		Toolkit tk = Toolkit.getDefaultToolkit();
@@ -37,6 +40,24 @@ public class Worker extends Thread {
 		this.factory = f;
 		System.out.println(image);
 	}
+	
+	public void addTool(String toolName, int quantity) {
+		if(this.tools.containsKey(toolName)) {
+			this.tools.put(toolName, this.tools.get(toolName).intValue() + quantity);
+		} else {
+			this.tools.put(toolName, new Integer(quantity));
+		}
+	}
+	
+	public void returnTool(String toolName, int quantity) {
+		if(this.tools.containsKey(toolName)) {
+			this.tools.put(toolName, this.tools.get(toolName).intValue() - quantity);
+		} else {
+			//throw
+			System.out.println("Didn't have tool!");
+		}
+	}
+	
 	public void addTask(Task newTask) {
 		this.currentTask = newTask;
 	}
@@ -71,17 +92,29 @@ public class Worker extends Thread {
 	
 	public void interact() {
 		if(target.equals("Task Board")) {
-			while(currentTask == null) {
+			if(currentTask == null || currentTask.complete()) {
+				if(currentTask != null && currentTask.complete()) {
+					factory.setAsComplete(currentTask.getId(), currentTask.getTaskName());
+				}
 				currentTask = this.factory.getFreshTask();
+				if(currentTask != null) {
+					factory.setAsInProgress(currentTask.getId(), currentTask.getTaskName());
+				}
 			}
 		} else if(factory.getAllItems().get(target) instanceof Resource){
 			canProceed = ((Resource)factory.getAllItems().get(target)).takeResource(quantityToTake);
 			System.out.println("QUANTITY:" + quantityToTake);
 		} else if(factory.getAllItems().get(target) instanceof Tool){
 			if(!currentIns.needToReturnTools()) {
-				((Tool)factory.getAllItems().get(target)).takeTool();
+				for(int i = 0; i < quantityToTake; i++) {
+					((Tool)factory.getAllItems().get(target)).takeTool();
+					this.addTool(target, 1);
+				}
 			} else {
-				((Tool)factory.getAllItems().get(target)).returnTool();
+				for(int i = 0; i < quantityToTake; i++) {
+					((Tool)factory.getAllItems().get(target)).returnTool();
+					this.returnTool(target, 1);
+				}
 			}
 		} else if(factory.getAllItems().get(target) instanceof WorkArea){
 			WorkArea wa = ((WorkArea)factory.getAllItems().get(target));
@@ -105,9 +138,10 @@ public class Worker extends Thread {
 			}
 			if(this.currentIns.needsTool()) {
 				target = this.currentIns.nextTool();
+				quantityToTake = this.currentIns.quantityForTool(target);
 				if(target.equals("Paintbrush")) {
 					target += "es";
-				} else if(target.equals("Pliers") || target.equals("Screwdrivers")) {
+				} else if(target.equals("Pliers") || target.equals("Screwdrivers") || target.equals("Scissors")) {
 					
 				} else {
 					target += "s";
@@ -115,11 +149,10 @@ public class Worker extends Thread {
 				System.out.println("TOOL: " + target);
 			} else if(!currentIns.needToReturnTools()){
 				target = this.currentIns.location();
-				if(target.equals("Saw")) {
-					target = "tableSaw";
-				} else if(target.equals("Paintingstation")) {
+				if(target.equals("Paintingstation")) {
 					target = "Painting Station";
 				}
+				target += factory.getWorkAreaNum(target);
 				System.out.println("LOCATION: " + target);
 			} else {
 				target = "Home";
@@ -134,16 +167,25 @@ public class Worker extends Thread {
 		int targetX = 0;
 		int targetY = 0;
 		if(t.equals("Task Board")) {
-			targetX = 550;
-			targetY = 25;
+			targetX = 570;
+			targetY = 85;
 		} else if(t.equals("Home")) {
 			targetX = 70;
 			targetY = 90;
 		} else {
 			Item tt = this.factory.getAllItems().get(t);
-			
 			targetX = tt.getX();
 			targetY = tt.getY();
+			if(tt instanceof Resource) {
+				targetX += 20;
+				targetY += 70;
+			} else if(tt instanceof Tool) {
+				targetX += 75;
+				targetY += 110;
+			} else if(tt instanceof WorkArea) {
+				targetX += 125;
+				targetY += 70;
+			}
 		}
 		
 		if(targetY - margin <= getY() - yOffset && targetY + margin >= getY() - yOffset && targetX - margin <= getX() + xOffset && targetX + margin >= getX() + xOffset) {
@@ -184,6 +226,9 @@ public class Worker extends Thread {
 	
 	public void run() {
 		while(true) {
+			if(!this.factory.getAllItems().containsKey(target) && !target.equals("Task Board") && !target.equals("Home")) {
+				System.out.println("FAULTY TARGET: " + target);
+			}
 			if(target != null && (target.equals("Task Board") || target.equals("Home") || this.factory.getAllItems().containsKey(target))) {
 				moveToward(target);
 				try {

@@ -1,0 +1,27 @@
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+
+
+public class Driver {
+	private NumberServer server;
+	ArrayList<Connection> connections = new ArrayList<Connection>();
+	private final ExecutorService pool;
+	private Semaphore poolSemaphore;
+	
+	public Driver(int n) {
+		server = new NumberServer();
+		poolSemaphore = new Semaphore(n);
+		pool = Executors.newFixedThreadPool(n);
+		for (;;) {
+			
+			pool.execute(new Thread(new Connection(server)));
+		}
+	}
+	
+	public static void main(String[] args) {
+		new Driver(10);
+	}
+}

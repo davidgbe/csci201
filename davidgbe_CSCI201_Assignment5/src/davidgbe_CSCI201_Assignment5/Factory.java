@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 
 public class Factory extends JFrame {
 	
@@ -41,12 +42,18 @@ public class Factory extends JFrame {
 	private JPanel resourcesPanel;
 	private JPanel toolsPanel;
 	private JPanel workAreasPanel;
+	private DefaultTableModel model;
 	private ReentrantLock lock = new ReentrantLock();
 	
 	private TreeMap<String, Integer> tools;
 	private TreeMap<String, Item> allItems = new TreeMap<String, Item>();
+	private TreeMap<String, Integer> workAreaCounts = new TreeMap<String, Integer>();
+	private TreeMap<String, Integer> upperBounds = new TreeMap<String, Integer>();
 	private ArrayList<Worker> allWorks = new ArrayList<Worker>();
 	private ArrayList<Task> allTasks = new ArrayList<Task>();
+	
+	private ArrayList<String> toolsNames = new ArrayList<String>();
+	private int maxRows = 0;
 	
 	public Factory() {
 		super("Factory");
@@ -72,6 +79,40 @@ public class Factory extends JFrame {
 		this.add(mainPanel);
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setVisible(true);
+	}
+	
+	public void setAsComplete(int row, String taskName) {
+		lock.lock();
+		try {
+			model.setValueAt(taskName + " ... Complete", row, 0);
+			model.fireTableDataChanged();
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			lock.unlock();
+		}
+	}
+	
+	public void setAsInProgress(int row, String taskName) {
+		lock.lock();
+		try {
+			model.setValueAt(taskName + " ... In Progress", row, 0);
+			model.fireTableDataChanged();
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			lock.unlock();
+		}
+	}
+	
+	public int getWorkAreaNum(String workArea) {	
+		if(this.workAreaCounts.containsKey(workArea)) {
+			int count = this.workAreaCounts.get(workArea).intValue();
+			this.workAreaCounts.put(workArea, new Integer((count + 1) % this.upperBounds.get(workArea).intValue()));
+			return count;
+		}
+		System.out.println("Faulty: " + workArea);
+		return -1;
 	}
 	
 	public TreeMap<String, Item> getAllItems() {
@@ -101,7 +142,12 @@ public class Factory extends JFrame {
 			        	ArrayList<Task> temp = Task.fromFile(filePath.toString());
 			        	for(Task t : temp) {
 			        		this.allTasks.add(t);
+			        		System.out.println("Taskname: " + t.getTaskName());
+			        		model.addRow(new Object[]{t.getTaskName() + " ... Not Built"});
+			        		t.setRowNum(this.maxRows);
+			        		this.maxRows++;
 			        	}
+			        	model.fireTableDataChanged();
 			        } else{
 			        	parseTools(filePath.toString());
 			        	this.repaint();
@@ -139,7 +185,9 @@ public class Factory extends JFrame {
 	private void setUpTaskBoard() {
 		String [] columnNames = {"Task Board"};
 		Object [][] data = {};
-		table = new JTable(data, columnNames);
+		table = new JTable();
+		model = new DefaultTableModel(data, columnNames);
+		table.setModel(model);
 		JScrollPane scrollPane = new JScrollPane(table);
 		table.setFillsViewportHeight(true);
 		table.setBackground(Color.gray);
@@ -165,10 +213,11 @@ public class Factory extends JFrame {
 		
 		for(String key : map.keySet()) {
 			String stripped = key.toLowerCase().replaceAll("\\s","");
-			System.out.println("Stripped :" + stripped);
+			System.out.println("Stripped: " + stripped);
 			Tool tool = new Tool(key, "resources/" + stripped + ".png", map.get(key));
 			this.allItems.put(key, tool);
 			this.toolsPanel.add(tool);
+			this.toolsNames.add(key);
 		}
 		System.out.println("Here");
 		toolsPanel.revalidate();
@@ -180,18 +229,22 @@ public class Factory extends JFrame {
 		gbc.ipady = 0;
 		gbc.gridy = 1;
 		String title = "";
+		this.workAreaCounts.put("Anvil", new Integer(0));
+		this.upperBounds.put("Anvil", new Integer(2));
 		for(int i = 0; i < 2; i++) {
 			gbc.gridx = i+1;
 			WorkArea anvil = new WorkArea("resources/anvil.png", title);
 			workAreasPanel.add(anvil, gbc);
-			this.allItems.put("Anvil", anvil);
+			this.allItems.put("Anvil" + i, anvil);
 			new Thread(anvil).start();
 		}
+		this.workAreaCounts.put("Workbench", new Integer(0));
+		this.upperBounds.put("Workbench", new Integer(3));
 		for(int i = 0; i < 3; i++) {
 			gbc.gridx = i+3;
 			WorkArea workBench = new WorkArea("resources/workbench.png", title);
 			workAreasPanel.add(workBench, gbc);
-			this.allItems.put("Workbench", workBench);
+			this.allItems.put("Workbench" + i, workBench);
 			new Thread(workBench).start();
 		}
 		
@@ -212,18 +265,22 @@ public class Factory extends JFrame {
 		
 		gbc.gridy = 4;
 		gbc.gridwidth = 1;
+		this.workAreaCounts.put("Furnace", new Integer(0));
+		this.upperBounds.put("Furnace", new Integer(2));
 		for(int i = 0; i < 2; i++) {
 			gbc.gridx = i+1;
 			WorkArea furnace = new WorkArea("resources/furnace.png", title);
 			workAreasPanel.add(furnace, gbc);
-			this.allItems.put("Furnace", furnace);
+			this.allItems.put("Furnace" + i, furnace);
 			new Thread(furnace).start();
 		}
+		this.workAreaCounts.put("Saw", new Integer(0));
+		this.upperBounds.put("Saw", new Integer(3));
 		for(int i = 0; i < 3; i++) {
 			gbc.gridx = i+3;
 			WorkArea tableSaw = new WorkArea("resources/tablesaw.png", title);
 			workAreasPanel.add(tableSaw, gbc);
-			this.allItems.put("tableSaw", tableSaw);
+			this.allItems.put("Saw" + i, tableSaw);
 			new Thread(tableSaw).start();
 		}
 		
@@ -244,18 +301,22 @@ public class Factory extends JFrame {
 		
 		gbc.gridy = 7;
 		gbc.gridwidth = 1;
+		this.workAreaCounts.put("Painting Station", new Integer(0));
+		this.upperBounds.put("Painting Station", new Integer(4));
 		for(int i = 0; i < 4; i++) {
 			gbc.gridx = i+1;
 			WorkArea paintingStation = new WorkArea("resources/paintingstation.png", title);
 			workAreasPanel.add(paintingStation, gbc);
-			this.allItems.put("Painting Station", paintingStation);
+			this.allItems.put("Painting Station" + i, paintingStation);
 			new Thread(paintingStation).start();
 		}
+		this.workAreaCounts.put("Press", new Integer(0));
+		this.upperBounds.put("Press", new Integer(1));
 		for(int i = 0; i < 1; i++) {
 			gbc.gridx = i+5;
 			WorkArea press = new WorkArea("resources/press.png", title);
 			workAreasPanel.add(press, gbc);
-			this.allItems.put("Press", press);
+			this.allItems.put("Press" + i, press);
 			new Thread(press).start();
 		}
 		

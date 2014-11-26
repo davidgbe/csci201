@@ -18,6 +18,8 @@ public class Task {
 	private int id;
 	private static int classId = 0;
 	public boolean assigned = false;
+	public boolean complete = false;
+	private int rowNum;
 	
 	public Task(String taskName) {
 		this.materials = new ArrayList<Material>();
@@ -25,6 +27,18 @@ public class Task {
 		this.id = classId;
 		classId++;
 		this.taskName = taskName;
+	}
+	
+	public boolean complete() {
+		return this.complete;
+	}
+	
+	public void setRowNum(int i) {
+		this.rowNum = i;
+	}
+	
+	public int getRowNum() {
+		return this.rowNum;
 	}
 	
 	public ArrayList<Material> getMaterials() {
@@ -55,6 +69,7 @@ public class Task {
 		if(instructionsIndex < instructions.size()) {
 			return true;
 		}
+		this.complete = true;
 		return false;
 	}
 	

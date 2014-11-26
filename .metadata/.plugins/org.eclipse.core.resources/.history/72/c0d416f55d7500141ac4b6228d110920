@@ -1,0 +1,15 @@
+
+public class PurchaseUpdate extends MoneyUpdate {
+	private boolean successful;
+	private int steroids;
+	private int morphine;
+	private int epinephrine;
+	
+	public PurchaseUpdate(int id, int money, boolean successful, int steroids, int morphine, int epinephrine) {
+		super(id, money);
+		this.successful = successful;
+		this.steroids = steroids;
+		this.morphine = morphine;
+		this.epinephrine = epinephrine;
+	}
+}

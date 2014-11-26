@@ -1,0 +1,128 @@
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.HashMap;
+
+
+public class ClientUser extends User implements Runnable{
+
+	Socket mySocket;
+	ObjectInputStream in;
+	ObjectOutputStream out;
+	PokemonFrame pk; 
+	
+	public ClientUser(){
+		super();
+		
+		try {
+			//TODO: DO NOT HARDCODE LOCALHOST
+			mySocket = new Socket("127.0.0.1", 1234);
+			in = new ObjectInputStream(mySocket.getInputStream());
+			out = new ObjectOutputStream(mySocket.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	public void setPokemonFrame(PokemonFrame pk) {
+		this.pk = pk;
+	}
+	
+	public ObjectOutputStream getOutputStream(){
+		return out;
+	}
+	
+	public void purchaseSteroids() {
+		try {
+			out.writeObject(new PurchaseUpdate(this.getID(), 0, true, 1, 0, 0));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void purchaseMorphine() {
+		try {
+			out.writeObject(new PurchaseUpdate(this.getID(), 0, true, 0, 1, 0));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void purchaseEpinephrine() {
+		try {
+			out.writeObject(new PurchaseUpdate(this.getID(), 0, true, 0, 0, 1));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void update(User user) {
+		this.setID(user.getID());
+		this.setUsername(user.getUsername());
+		this.setMoney(user.getMoney());
+		this.setWins(user.getWins());
+		this.setLosses(user.getLosses());
+		this.setOpponentID(user.getOpponentID());
+		if(this.getItems() == null) {
+			this.setItems(new HashMap<String, Integer>());
+		}
+		this.updateItem("steroids", user.getItemQuantity("steroids"));
+		this.updateItem("morphine", user.getItemQuantity("morphine"));
+		this.updateItem("epinephrine", user.getItemQuantity("epinephrine"));
+	}
+	
+	public void run() {
+		
+		System.out.println("Top of run in ClientUser");
+		
+		while(true){
+			
+			
+			try{
+				
+				
+				// send a message every second
+				while(true){
+					
+					Object objectReceived = in.readObject();
+					if(objectReceived instanceof LoginAuthenticated){
+						System.out.println("Verifying...");
+						LoginAuthenticated messageReceived = (LoginAuthenticated)objectReceived;
+						if(messageReceived.getAuthenticated()){
+							System.out.println("Login verified");	
+							this.pk.userHasLoggedIn();
+						}
+						else{
+							System.out.println("Login failed");
+						}
+		
+						
+					} else if(objectReceived instanceof User) {
+						this.update((User)objectReceived);
+					} else if(objectReceived instanceof PurchaseUpdate) {
+						if(((PurchaseUpdate) objectReceived).isSuccessful()) {
+							this.setMoney(((PurchaseUpdate) objectReceived).getMoney());
+							this.updateItem("steroids", ((PurchaseUpdate) objectReceived).getSteroids());
+							this.updateItem("morphine", ((PurchaseUpdate) objectReceived).getMorphine());
+							this.updateItem("epinephrine", ((PurchaseUpdate) objectReceived).getEpinephrine());
+							this.pk.storePanel.update();
+						} else {
+							//purchase failed stuff
+						}
+					}
+						
+				}
+			}
+			
+			catch(IOException | ClassNotFoundException e){
+			
+			}		
+		}
+		
+	}
+	
+	
+
+}

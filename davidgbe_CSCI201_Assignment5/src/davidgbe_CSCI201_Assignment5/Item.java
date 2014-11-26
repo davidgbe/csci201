@@ -24,6 +24,7 @@ public class Item extends JPanel {
 		mainPanel.add(this.title);
 		mainPanel.add(this.icon);
 		this.add(mainPanel);
+		this.mainPanel.setOpaque(false);
 		this.setOpaque(false);
 		this.setVisible(true);
 	}

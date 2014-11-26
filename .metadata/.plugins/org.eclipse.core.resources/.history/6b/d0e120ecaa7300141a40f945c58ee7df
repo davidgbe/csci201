@@ -1,0 +1,58 @@
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Vector;
+import java.io.*;
+
+public class Server {
+	
+	private Vector<ServerUser> allUsers = new Vector<ServerUser>();
+	private Vector<ServerUser> queue = new Vector<ServerUser>();
+	
+	
+	public Server(int port) {
+		try {
+			ServerSocket ss= new ServerSocket(1234);
+			while(true){
+				Socket userSocket = ss.accept();
+				ServerUser ut = new ServerUser(userSocket);
+				new Thread(ut).start();
+			}
+		} catch (IOException ioe) {
+			System.out.println("IOException in Server constructor: " + ioe.getMessage());
+		}
+	}
+	
+	public ServerUser getUserByID(int id) {
+		for(int i = 0; i < allUsers.size(); i++) {
+			if(allUsers.get(i).getID() == id) {
+				return allUsers.get(i);
+			}
+		}
+		return null;
+	}
+	
+	public ServerUser getUserByUsername(String username) {
+		for(int i = 0; i < allUsers.size(); i++) {
+			if(allUsers.get(i).getUsername().equals(username)) {
+				return allUsers.get(i);
+			}
+		}
+		return null;
+	}
+	
+	public void addToQueue(ServerUser su) {
+		queue.add(su);
+		if(queue.size() == 2) {
+			
+		}
+	}
+	
+	public static void main(String [] args) {
+		if (args.length!= 1) {
+			System.out.println("USAGE: java Server [port]");
+			return;
+		}
+		Server server = new Server(Integer.parseInt(args[0]));
+	}
+}

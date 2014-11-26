@@ -1,0 +1,51 @@
+package davidgbe_CSCI201_Assignment5;
+
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Resource extends Item {
+	private int currentQuantity;
+	private ReentrantLock lock = new ReentrantLock();
+	private Condition availableToEnter = lock.newCondition();
+	boolean available = true;
+	
+	public Resource(String title, String imagePath, int quantity) {
+		super(title, imagePath, quantity + "", 16);
+		this.currentQuantity = quantity;
+	}
+	
+	public boolean takeResource(int quantity) {
+		while(!available) {
+			try {
+				availableToEnter.await();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		lock.lock();
+		available = false;
+		try {
+			if(currentQuantity - quantity >= 0) {
+				currentQuantity -= quantity;
+				this.updateText(currentQuantity + "");
+				available = true;
+				lock.unlock();
+				availableToEnter.signalAll();
+				return true;
+			} else {
+				available = true;
+				lock.unlock();
+				availableToEnter.signalAll();
+				return false;
+			}
+		} catch(Exception e) {
+			available = true;
+			lock.unlock();
+			availableToEnter.signalAll();
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+}

@@ -1,0 +1,63 @@
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+
+public class StorePanel extends JPanel {
+	private ClientUser myClientUser;
+	private JLabel myGold;
+	private PokemonFrame parent;
+	
+	public StorePanel() {
+		
+		myGold = new JLabel("XXXX gold");
+		
+		JButton boost = new JButton("Steroids (Boost)");
+		JButton heal = new JButton("Morphine (Heal)");
+		JButton revive = new JButton("Epinephrine (Revive)");
+		myGold.setAlignmentX(Component.CENTER_ALIGNMENT); 
+
+		this.add(myGold); 
+		
+		boost.setSize(parent.getWidth()*3/4, parent.getHeight()/5);
+		boost.setMaximumSize(boost.getSize());
+		boost.setAlignmentX(Component.CENTER_ALIGNMENT); 
+		boost.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent ae) {
+				myClientUser.purchaseSteroids();
+			}
+		});
+	
+		heal.setSize(parent.getWidth()*3/4, parent.getHeight()/5);
+		heal.setMaximumSize(heal.getSize());
+		heal.setAlignmentX(Component.CENTER_ALIGNMENT); 
+		boost.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent ae) {
+				myClientUser.purchaseMorphine();
+			}
+		});
+		
+		revive.setSize(parent.getWidth()*3/4, parent.getHeight()/5);
+		revive.setMaximumSize(revive.getSize());
+		revive.setAlignmentX(Component.CENTER_ALIGNMENT); 
+		boost.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent ae) {
+				myClientUser.purchaseEpinephrine();
+			}
+		});
+		
+		
+		this.setLayout(new BoxLayout(storePanel, BoxLayout.Y_AXIS));
+		storePanel.add(boost); 
+		storePanel.add(heal); 
+		storePanel.add(revive); 
+
+		
+		add(storePanel);
+	}
+}

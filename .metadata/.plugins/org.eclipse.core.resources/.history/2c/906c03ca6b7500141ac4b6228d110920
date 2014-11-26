@@ -1,0 +1,17 @@
+import java.io.Serializable;
+
+
+public class UserUpdate extends User implements Serializable{
+	
+	public UserUpdate(int id, String username, int money, int wins, int losses, int opponentID, int steroids, int morphine, int epinephrine) {
+		this.setID(id);
+		this.setUsername(username);
+		this.setMoney(money);
+		this.setWins(wins);
+		this.setLosses(losses);
+		this.setOpponentID(opponentID);
+		this.updateItem("steroids", steroids);
+		this.updateItem("morphine", morphine);
+		this.updateItem("epinephrine", epinephrine);
+	}
+}

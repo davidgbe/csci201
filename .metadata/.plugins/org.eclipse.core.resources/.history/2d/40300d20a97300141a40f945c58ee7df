@@ -1,0 +1,27 @@
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.io.*;
+
+public class Server {
+	public Server(int port) {
+		try {
+			ServerSocket ss= new ServerSocket( port );
+			while(true){
+				Socket userSocket = ss.accept();
+				ServerUser ut = new ServerUser(userSocket);
+				new Thread(ut).start();
+			}
+		} catch (IOException ioe) {
+			System.out.println("IOException in Server constructor: " + ioe.getMessage());
+		}
+	}
+	
+	public static void main(String [] args) {
+		if (args.length!= 1) {
+			System.out.println("USAGE: java Server [port]");
+			return;
+		}
+		Server server = new Server(Integer.parseInt(args[0]));
+	}
+}

@@ -1,0 +1,33 @@
+import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
+
+
+public class Connection implements Runnable {
+	private NumberServer server;
+	private Semaphore semaphore;
+	private ReentrantLock lock;
+	private ArrayList<Integer> results;
+
+	public Connection(NumberServer ns, Semaphore s, ArrayList<Integer> r, ReentrantLock l) {
+		this.server = ns;
+		this.semaphore = s;
+		this.lock = l;
+		this.results = r;
+	}
+	
+	public void run() {
+		while(true) {
+			try {
+				this.semaphore.acquire();
+				System.out.println(this.server.getNumber());
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				semaphore.release();
+			}
+		}
+	}
+
+}
